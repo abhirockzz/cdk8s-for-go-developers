@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service-c8cb96f8
+spec:
+  ports:
+    - port: 9090
+      targetPort: 80
+  selector:
+    app: hello-nginx
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment-c824a255
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-nginx
+  template:
+    metadata:
+      labels:
+        app: hello-nginx
+    spec:
+      containers:
+        - image: nginx
+          name: nginx-container
+          ports:
+            - containerPort: 80
