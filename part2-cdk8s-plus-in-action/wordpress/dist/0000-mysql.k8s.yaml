@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Secret
+immutable: false
+metadata:
+  name: mysql-pass
+stringData:
+  password: Password123
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-mysql-deployment-cdk8splus-c83762d9
+spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      cdk8s.io/metadata.addr: mysql-mysql-deployment-cdk8splus-c892d60d
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        cdk8s.io/metadata.addr: mysql-mysql-deployment-cdk8splus-c892d60d
+    spec:
+      automountServiceAccountToken: true
+      containers:
+        - env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mysql-pass
+                  optional: false
+          image: mariadb
+          imagePullPolicy: Always
+          name: mysql-container
+          ports:
+            - containerPort: 3306
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-persistent-storage
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroupChangePolicy: Always
+        runAsNonRoot: false
+      setHostnameAsFQDN: false
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-mysql-pvc-c8799bba
+            readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-mysql-pvc-c8799bba
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  clusterIP: None
+  externalIPs: []
+  ports:
+    - port: 3306
+  selector:
+    cdk8s.io/metadata.addr: mysql-mysql-deployment-cdk8splus-c892d60d
+  type: ClusterIP

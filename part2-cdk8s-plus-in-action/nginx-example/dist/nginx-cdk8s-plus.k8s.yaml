@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment-cdk8s-plus
+spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      cdk8s.io/metadata.addr: nginx-cdk8s-plus-deployment-c84b388e
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        cdk8s.io/metadata.addr: nginx-cdk8s-plus-deployment-c84b388e
+    spec:
+      automountServiceAccountToken: true
+      containers:
+        - image: nginx
+          imagePullPolicy: Always
+          name: nginx-container
+          ports:
+            - containerPort: 80
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroupChangePolicy: Always
+        runAsNonRoot: false
+      setHostnameAsFQDN: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-container-service
+spec:
+  externalIPs: []
+  ports:
+    - port: 9090
+      targetPort: 80
+  selector:
+    cdk8s.io/metadata.addr: nginx-cdk8s-plus-deployment-c84b388e
+  type: LoadBalancer
