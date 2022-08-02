@@ -1,0 +1,13 @@
+apiVersion: dynamodb.services.k8s.aws/v1alpha1
+kind: Table
+metadata:
+  name: dynamodb-urls-ack
+spec:
+  tableName: urls
+  attributeDefinitions:
+    - attributeName: shortcode
+      attributeType: S
+  billingMode: PAY_PER_REQUEST
+  keySchema:
+    - attributeName: email
+      keyType: HASH

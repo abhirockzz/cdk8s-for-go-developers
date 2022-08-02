@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynamodb-app
+spec:
+  minReadySeconds: 0
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      cdk8s.io/metadata.addr: deployment-dynamodb-app-deployment-c8d47da7
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        cdk8s.io/metadata.addr: deployment-dynamodb-app-deployment-c8d47da7
+    spec:
+      automountServiceAccountToken: true
+      containers:
+        - env:
+            - name: TABLE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: default.export-dynamodb-tablename
+                  name: export-dynamodb-urls-info
+                  optional: false
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  key: default.export-dynamodb-region
+                  name: export-dynamodb-urls-info
+                  optional: false
+          image: 568863012249.dkr.ecr.us-east-1.amazonaws.com/dynamodb-app:latest
+          imagePullPolicy: Always
+          name: dynamodb-app-container
+          ports:
+            - containerPort: 8080
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroupChangePolicy: Always
+        runAsNonRoot: false
+      serviceAccountName: eks-dynamodb-app-sa
+      setHostnameAsFQDN: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynamodb-app-service
+spec:
+  externalIPs: []
+  ports:
+    - port: 9090
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    cdk8s.io/metadata.addr: deployment-dynamodb-app-deployment-c8d47da7
+  type: LoadBalancer

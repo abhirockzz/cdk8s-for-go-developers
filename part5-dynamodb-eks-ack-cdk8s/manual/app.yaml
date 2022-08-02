@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynamodb-app
+  labels:
+    app: dynamodb-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dynamodb-app
+  template:
+    metadata:
+      labels:
+        app: dynamodb-app
+    spec:
+      serviceAccountName: eks-dynamodb-app-sa
+      containers:
+      - name: dynamodb-app-container
+        image: <enter AWS account ID>.dkr.ecr.<AWS region>.amazonaws.com/dynamodb-app
+        ports:
+        - name: http
+          containerPort: 8080
+        imagePullPolicy: Always
+        env:
+          - name: AWS_REGION
+            value: <enter AWS region e.g. us-east-1>
+          - name: TABLE_NAME
+            value: urls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynamodb-app-service
+  labels:
+    app: dynamodb-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: dynamodb-app
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 8080

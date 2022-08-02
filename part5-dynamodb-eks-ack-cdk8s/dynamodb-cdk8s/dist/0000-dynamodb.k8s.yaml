@@ -1,0 +1,49 @@
+apiVersion: dynamodb.services.k8s.aws/v1alpha1
+kind: Table
+metadata:
+  name: dynamodb-dynamodb-ack-cdk8s-table-c88d874d
+spec:
+  attributeDefinitions:
+    - attributeName: shortcode
+      attributeType: S
+  billingMode: PAY_PER_REQUEST
+  keySchema:
+    - attributeName: shortcode
+      keyType: HASH
+  tableName: urls
+---
+apiVersion: v1
+kind: ConfigMap
+immutable: false
+metadata:
+  name: export-dynamodb-urls-info
+---
+apiVersion: services.k8s.aws/v1alpha1
+kind: FieldExport
+metadata:
+  name: export-dynamodb-tablename
+spec:
+  from:
+    path: .spec.tableName
+    resource:
+      group: dynamodb.services.k8s.aws
+      kind: Table
+      name: dynamodb-dynamodb-ack-cdk8s-table-c88d874d
+  to:
+    kind: configmap
+    name: export-dynamodb-urls-info
+---
+apiVersion: services.k8s.aws/v1alpha1
+kind: FieldExport
+metadata:
+  name: export-dynamodb-region
+spec:
+  from:
+    path: .status.ackResourceMetadata.region
+    resource:
+      group: dynamodb.services.k8s.aws
+      kind: Table
+      name: dynamodb-dynamodb-ack-cdk8s-table-c88d874d
+  to:
+    kind: configmap
+    name: export-dynamodb-urls-info
